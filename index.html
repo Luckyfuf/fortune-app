@@ -1,0 +1,207 @@
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@900&display=swap" rel="stylesheet">
+<style>
+/* ----------------------------------------------------- */
+/* 1. CSS 修正：適應實際可視區域 (100dvh) 並縮小文字 */
+/* ----------------------------------------------------- */
+body { 
+    margin: 0; 
+    font-family: 'Noto Sans TC', '微軟正黑體', sans-serif; 
+    text-align: center; 
+    overflow: hidden; 
+}
+.page { 
+    width: 100vw; 
+    height: 100dvh; /* 修正：使用 100dvh 確保內容不被手機瀏覽器 Bar 遮擋 */
+    position: fixed;
+    top: 0; 
+    left: 0; 
+    display: none; 
+    flex-direction: column; 
+    justify-content: center; 
+    align-items: center; 
+}
+.gif-img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    position: absolute;
+    top: 0;
+    left: 0;
+}
+#page3-content-wrapper {
+    position: absolute; 
+    top: 0; 
+    left: 0;
+    width: 100%; 
+    height: 100dvh; /* 修正：內容容器也使用 100dvh */
+    z-index: 10;
+    color: white; 
+    opacity: 0; 
+    transition: opacity 0.3s; /* 讓內容浮現更平滑 */
+}
+.main-message-container {
+    position: absolute;
+    top: 56%; /* 維持上次的微調位置 */
+    left: 50%;
+    transform: translate(-50%, -50%); 
+    width: 90%;
+}
+.main-message-container h2 {
+    font-size: 80px; /* 縮小：從 100px 調整為 80px */ 
+    margin-bottom: 50px; /* 間距微調 */
+    color: #FFD700;
+    font-weight: 900;
+    text-shadow: 2px 2px 5px rgba(255, 0, 0, 0.8);
+    line-height: 1.1;
+}
+.main-message-container p {
+    font-size: 65px; /* 縮小：從 80px 調整為 65px */
+    margin: 10px 0;
+    line-height: 1.3;
+    color: white; 
+    font-weight: 700;
+}
+#reset-button {
+    position: absolute;
+    bottom: 10vh; 
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 15;
+    background-color: #FFD700; 
+    color: #CC0000; 
+    font-weight: 900;
+    font-size: 22px;
+    padding: 15px 30px;
+    border: none;
+    border-radius: 50px;
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.5);
+    cursor: pointer;
+    transition: transform 0.2s;
+}
+#reset-button:hover {
+    transform: translate(-50%, -5%) scale(1.05);
+}
+</style>
+
+<div id="page1" class="page" style="display: flex;">
+    <img id="gif1" src="https://i.postimg.cc/VNRsG6Gw/chou-qian-zhu-ye.gif" class="gif-img" onclick="goToPage2()">
+</div>
+<div id="page2" class="page">
+    <img id="gif2" src="https://i.postimg.cc/sf56thPL/guo-chang-ye.gif" class="gif-img">
+</div>
+<div id="page3" class="page">
+    <img id="gif3" src="https://i.postimg.cc/QMRmz8Hb/zhong-qian-ye.gif" class="gif-img">
+    
+    <div id="page3-content-wrapper">
+        <div class="main-message-container">
+            <h2 id="content-B"></h2> 
+            <p id="content-C"></p> 
+        </div>
+    </div>
+    <button id="reset-button" onclick="resetPage()">再抽一次</button>
+</div>
+
+<script>
+const YOUR_STATIC_IMAGE_URL = 'https://i.postimg.cc/Bb100Qg5/zhong-qian-ding-ge.jpg';
+const page1 = document.getElementById('page1');
+const page2 = document.getElementById('page2');
+const page3 = document.getElementById('page3');
+const gif3 = document.getElementById('gif3'); 
+const contentWrapper = document.getElementById('page3-content-wrapper'); 
+const contentB = document.getElementById('content-B');         
+const contentC = document.getElementById('content-C');           
+
+let fortuneData = [];
+
+// 函數：處理 GIF 定格動畫 (3 秒後定格)
+function stopGifAnimation() {
+    gif3.src = YOUR_STATIC_IMAGE_URL; 
+}
+
+// **新函數：顯示內容 (讓內容浮現)**
+function showContent() {
+    contentWrapper.style.opacity = '1'; 
+}
+
+// 函數：隨機抽取一筆資料並顯示 (僅準備內容，不控制顯示/定格)
+function displayRandomFortune() {
+    if (fortuneData.length === 0) {
+        contentB.textContent = '資料載入失敗';
+        contentC.textContent = '請檢查 data.json 檔案。';
+        console.error("No data loaded from JSON.");
+        contentWrapper.style.opacity = '1'; // 錯誤時立即顯示
+        return;
+    }
+    
+    // 從陣列中隨機抽取一筆資料
+    const randomIndex = Math.floor(Math.random() * fortuneData.length);
+    const data = fortuneData[randomIndex];
+    
+    // 填充內容 (立即填充，但內容容器 opacity=0)
+    contentB.textContent = data.contentB; 
+    contentC.textContent = data.contentC; 
+}
+
+// **關鍵函數：載入 JSON 資料 (修改：加入 1 秒顯示內容延遲)**
+async function loadDataAndGoToPage3() {
+    page2.style.display = 'none';
+    gif3.src = 'https://i.postimg.cc/QMRmz8Hb/zhong-qian-ye.gif'; 
+    page3.style.display = 'flex';
+    
+    // 檢查資料是否已載入，避免重複網路請求
+    if (fortuneData.length === 0) {
+        try {
+            const response = await fetch('data.json');
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+            fortuneData = await response.json();
+        } catch (error) {
+            console.error("Error fetching data.json:", error);
+            contentB.textContent = '網路/檔案錯誤！';
+            contentC.textContent = '請檢查 JSON 檔案和部署。';
+            contentWrapper.style.opacity = '1';
+            setTimeout(stopGifAnimation, 3000); 
+            return;
+        }
+    }
+    
+    // 1. 資料已載入，填充內容（內容還藏著）
+    displayRandomFortune();
+    
+    // 2. 延遲 1000ms (1 秒) 顯示內容 (使用者要求)
+    setTimeout(showContent, 1000); 
+    
+    // 3. 延遲 3000ms (3 秒) 停止 GIF (維持動畫時間)
+    setTimeout(stopGifAnimation, 3000); 
+}
+
+// 函數：從 Page 1 跳到 Page 2
+function goToPage2() {
+    page1.style.display = 'none';
+    page2.style.display = 'flex';
+    contentWrapper.style.opacity = '0'; 
+    
+    // Page 2 延遲時間維持 2000ms (2 秒)
+    setTimeout(loadDataAndGoToPage3, 2000); 
+}
+
+// 修正後的函數：重設頁面邏輯 (維持 2 秒延遲)
+function resetPage() {
+    page3.style.display = 'none';
+    page2.style.display = 'flex';
+    contentWrapper.style.opacity = '0'; 
+
+    // Page 2 延遲時間維持 2000ms (2 秒)
+    setTimeout(loadDataAndGoToPage3, 2000); 
+    
+    // 重設中籤文字
+    contentB.textContent = ''; 
+    contentC.textContent = ''; 
+}
+
+// 初始化：頁面一開始即顯示 Page 1
+document.addEventListener('DOMContentLoaded', () => {
+    page1.style.display = 'flex'; 
+});
+</script>
