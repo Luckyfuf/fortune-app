@@ -16,11 +16,11 @@
             font-family: 'Noto Sans TC', sans-serif; 
             text-align: center; 
             overflow: hidden; 
-            background-color: #b70000; /* 優化：加入紅色底色，避免白屏感 */
+            background-color: #800000; /* 調整為深紅色 */
         }
         .page { 
             width: 100vw; 
-            height: 100dvh; /* 適應實際可視區域 */
+            height: 100dvh; 
             position: fixed;
             top: 0; 
             left: 0; 
@@ -28,7 +28,7 @@
             flex-direction: column; 
             justify-content: center; 
             align-items: center;
-            background-color: #b70000; /* 每頁預設紅色底 */
+            background-color: #800000; /* 深紅色背景 */
         }
         .gif-img {
             width: 100%;
@@ -38,70 +38,74 @@
             top: 0;
             left: 0;
         }
+        /* 中籤文字容器優化：確保不跑版 */
         #page3-content-wrapper {
             position: absolute; 
             top: 0; 
             left: 0;
             width: 100%; 
-            height: 100dvh; 
+            height: 100%; 
             z-index: 10;
-            color: white; 
+            pointer-events: none; /* 確保不影響點擊按鈕 */
             opacity: 0; 
-            transition: opacity 0.5s; /* 平滑浮現 */
+            transition: opacity 0.5s; 
         }
         .main-message-container {
             position: absolute;
-            top: 56%; 
+            top: 55%; /* 微調位置確保在圖片框內 */
             left: 50%;
             transform: translate(-50%, -50%); 
-            width: 90%;
+            width: 85%;
         }
         .main-message-container h2 {
-            font-size: 80px; 
-            margin-bottom: 50px; 
+            font-size: 75px; /* 字級微縮小避免溢出 */
+            margin-bottom: 40px; 
             color: #FFD700;
             font-weight: 900;
-            text-shadow: 2px 2px 5px rgba(255, 0, 0, 0.8);
+            text-shadow: 2px 2px 5px rgba(0, 0, 0, 0.5);
             line-height: 1.1;
         }
         .main-message-container p {
-            font-size: 65px; 
-            margin: 10px 0;
-            line-height: 1.3;
+            font-size: 60px; 
+            margin: 0;
+            line-height: 1.2;
             color: white; 
             font-weight: 700;
+            text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.5);
         }
+        /* 按鈕樣式修復 */
         #reset-button {
             position: absolute;
-            bottom: 10dvh; 
+            bottom: 8dvh; 
             left: 50%;
             transform: translateX(-50%);
-            z-index: 15;
+            z-index: 20;
             background-color: #FFD700; 
             color: #CC0000; 
             font-weight: 900;
-            font-size: 22px;
-            padding: 15px 30px;
+            font-size: 20px;
+            width: 160px;
+            height: 55px;
             border: none;
             border-radius: 50px;
-            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.5);
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
             cursor: pointer;
-            /* 優化：隱藏文字，防止 iOS 網址列抓取文字顯示 */
+            overflow: hidden;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+        /* 隱藏原生文字以防 iOS 預覽抓取 */
+        .btn-text {
             text-indent: -9999px;
             white-space: nowrap;
-            width: 180px;
-            height: 60px;
         }
-        /* 為了讓按鈕看起來還是有「再抽一次」的樣子，用虛擬元素補回文字 */
-        #reset-button::after {
+        /* 用虛擬元素顯示文字 */
+        #reset-button::before {
             content: "再抽一次";
-            text-indent: 0;
-            display: block;
             position: absolute;
             width: 100%;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
+            text-align: center;
         }
     </style>
 </head>
@@ -123,7 +127,7 @@
             <p id="content-C"></p> 
         </div>
     </div>
-    <button id="reset-button" onclick="resetPage()">再抽一次</button>
+    <button id="reset-button" onclick="resetPage()"><span class="btn-text">再抽一次</span></button>
 </div>
 
 <script>
@@ -147,10 +151,7 @@
     }
 
     function displayRandomFortune() {
-        if (fortuneData.length === 0) {
-            contentB.textContent = '資料載入中...';
-            return;
-        }
+        if (fortuneData.length === 0) return;
         const randomIndex = Math.floor(Math.random() * fortuneData.length);
         const data = fortuneData[randomIndex];
         contentB.textContent = data.contentB; 
@@ -168,15 +169,13 @@
                 fortuneData = await response.json();
             } catch (error) {
                 console.error("Error:", error);
-                contentB.textContent = '連線失敗';
-                showContent();
                 return;
             }
         }
         
         displayRandomFortune();
-        setTimeout(showContent, 1000); // 延遲 1 秒出現文字
-        setTimeout(stopGifAnimation, 3000); // 延遲 3 秒停止動畫
+        setTimeout(showContent, 1000); 
+        setTimeout(stopGifAnimation, 3000); 
     }
 
     function goToPage2() {
@@ -195,7 +194,6 @@
         contentC.textContent = ''; 
     }
 
-    // 確保 DOM 載入後才顯示，增加穩定性
     window.addEventListener('load', () => {
         page1.style.display = 'flex';
     });
