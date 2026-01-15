@@ -27,7 +27,7 @@
         }
         .gif-img { width: 100%; height: 100%; object-fit: cover; }
 
-        /* 中籤文字容器：Top 40% (下半部開始) + 放大 7% */
+        /* 文字定位：Top 40% + 放大 7% */
         #page3-content-wrapper {
             position: absolute; top: 0; left: 0;
             width: 100%; height: 100%; 
@@ -78,7 +78,7 @@
 <body style="background-color: #800000;">
 
 <div id="page1" class="page" style="display: flex;">
-    <img id="gif1" src="https://i.postimg.cc/zGFqgDTk/zhu-ye.gif" class="gif-img" onclick="goToPage2()">
+    <img id="gif1" src="https://i.postimg.cc/zGFqgDTk/zhu-ye.gif" class="gif-img" onclick="handleStartClick()">
 </div>
 
 <div id="page2" class="page">
@@ -86,7 +86,7 @@
 </div>
 
 <div id="page3" class="page">
-    <img id="gif3" src="https://i.postimg.cc/Bb100Qg5/zhong-qian-ding-ge.jpg" class="gif-img">
+    <img id="gif3" class="gif-img">
     <div id="page3-content-wrapper">
         <div class="main-message-container">
             <h2 id="content-B"></h2> 
@@ -97,7 +97,6 @@
 </div>
 
 <script>
-    // 這裡我已手動核對您提供的三個完整網址
     const IMG_URLS = {
         page1: 'https://i.postimg.cc/zGFqgDTk/zhu-ye.gif',
         page2: 'https://i.postimg.cc/pLH2r557/guo-chang-ye.gif',
@@ -107,69 +106,64 @@
 
     let fortuneData = [];
 
-    // 背景載入 page2 和 page3
-    function preloadAssets() {
-        [IMG_URLS.page2, IMG_URLS.page3].forEach(url => {
-            const img = new Image();
-            img.src = url;
-        });
-    }
-
+    // 【關鍵優化 2】非同步下載 JSON，不卡圖片
     async function fetchData() {
         try {
             const res = await fetch('data.json');
             fortuneData = await res.json();
-        } catch (e) { console.error("JSON Error"); }
+        } catch (e) { console.error("Data error"); }
     }
 
-    function displayFortune() {
-        if (fortuneData.length > 0) {
-            const random = fortuneData[Math.floor(Math.random() * fortuneData.length)];
-            document.getElementById('content-B').textContent = random.contentB; 
-            document.getElementById('content-C').textContent = random.contentC; 
-        }
+    function handleStartClick() {
+        const p1 = document.getElementById('page1');
+        p1.style.opacity = '0';
+        setTimeout(() => {
+            p1.style.display = 'none';
+            goToPage2();
+        }, 150);
+    }
+
+    function goToPage2() {
+        const p2 = document.getElementById('page2');
+        p2.style.display = 'flex';
+        // 【關鍵優化 3】只有在點擊後，才開始下載 Page 2 的圖
+        document.getElementById('gif2').src = IMG_URLS.page2;
+        
+        // 同時偷偷下載 Page 3 的圖，利用這 2 秒過場時間
+        const tempImg = new Image();
+        tempImg.src = IMG_URLS.page3;
+
+        setTimeout(loadToPage3, 2000); 
     }
 
     async function loadToPage3() {
         document.getElementById('page2').style.display = 'none';
         const gif3 = document.getElementById('gif3');
-        
-        // 確保 Page3 使用正確的中籤頁連結
         gif3.src = IMG_URLS.page3;
         document.getElementById('page3').style.display = 'flex';
         document.getElementById('page3-content-wrapper').style.opacity = '0';
 
         if (fortuneData.length === 0) await fetchData();
-        displayFortune();
+        const random = fortuneData[Math.floor(Math.random() * fortuneData.length)];
+        document.getElementById('content-B').textContent = random.contentB; 
+        document.getElementById('content-C').textContent = random.contentC; 
         
-        // 文字 0.8秒後浮現
         setTimeout(() => { 
             document.getElementById('page3-content-wrapper').style.opacity = '1'; 
         }, 800);
         
-        // 3秒後換成靜態定格圖
+        // 3秒後定格成靜態圖 (靜態圖很小，通常已經載好了)
         setTimeout(() => { gif3.src = IMG_URLS.static; }, 3000); 
-    }
-
-    function goToPage2() {
-        document.getElementById('page1').style.display = 'none';
-        const p2 = document.getElementById('page2');
-        p2.style.display = 'flex';
-        // 進入過場時載入過場頁連結
-        document.getElementById('gif2').src = IMG_URLS.page2;
-        setTimeout(loadToPage3, 2000); 
     }
 
     function resetPage() {
         document.getElementById('page3-content-wrapper').style.opacity = '0';
         document.getElementById('page3').style.display = 'none';
-        goToPage2();
+        handleStartClick();
     }
 
-    window.addEventListener('load', () => {
-        fetchData();
-        preloadAssets();
-    });
+    // 頁面載入後只做 JSON 抓取
+    window.onload = fetchData;
 </script>
 </body>
 </html>
