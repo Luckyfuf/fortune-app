@@ -5,10 +5,11 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>我的發財密馬</title>
     
-    <link rel="preload" as="image" href="https://i.postimg.cc/zGFqgDTk/zhu-ye.gif">
+    <link rel="preload" as="image" href="https://i.postimg.cc/pLH2r557/guo-chang-ye.gif">
     
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@900&display=swap" rel="stylesheet">
     <style>
+        /* 基礎設定 */
         html, body { 
             margin: 0; padding: 0; width: 100%; height: 100%;
             background-color: #800000 !important; 
@@ -18,7 +19,7 @@
         .page { 
             width: 100vw; height: 100dvh; 
             position: fixed; top: 0; left: 0; 
-            display: none; 
+            display: none; /* 預設隱藏 */
             background-color: #800000; 
             z-index: 5;
             flex-direction: column;
@@ -27,7 +28,7 @@
         }
         .gif-img { width: 100%; height: 100%; object-fit: cover; }
 
-        /* 文字定位：Top 40% + 放大 7% */
+        /* 中籤頁文字設定：Top 40% + 放大 */
         #page3-content-wrapper {
             position: absolute; top: 0; left: 0;
             width: 100%; height: 100%; 
@@ -58,6 +59,7 @@
             text-shadow: 2px 2px 6px rgba(0, 0, 0, 0.7);
         }
 
+        /* 按鈕設定 */
         #reset-button {
             position: absolute; bottom: 7dvh; left: 50%;
             transform: translateX(-50%);
@@ -77,12 +79,8 @@
 </head>
 <body style="background-color: #800000;">
 
-<div id="page1" class="page" style="display: flex;">
-    <img id="gif1" src="https://i.postimg.cc/zGFqgDTk/zhu-ye.gif" class="gif-img" onclick="handleStartClick()">
-</div>
-
-<div id="page2" class="page">
-    <img id="gif2" class="gif-img"> 
+<div id="page2" class="page" style="display: flex;">
+    <img id="gif2" src="https://i.postimg.cc/pLH2r557/guo-chang-ye.gif" class="gif-img"> 
 </div>
 
 <div id="page3" class="page">
@@ -93,12 +91,12 @@
             <p id="content-C"></p> 
         </div>
     </div>
-    <button id="reset-button" onclick="resetPage()"><span class="btn-text-hide">再抽一次</span></button>
+    <button id="reset-button" onclick="resetApp()"><span class="btn-text-hide">再抽一次</span></button>
 </div>
 
 <script>
+    // 圖片連結配置
     const IMG_URLS = {
-        page1: 'https://i.postimg.cc/zGFqgDTk/zhu-ye.gif',
         page2: 'https://i.postimg.cc/pLH2r557/guo-chang-ye.gif',
         page3: 'https://i.postimg.cc/vZsQTxxt/zhong-qian-ye.gif',
         static: 'https://i.postimg.cc/Bb100Qg5/zhong-qian-ding-ge.jpg'
@@ -106,64 +104,56 @@
 
     let fortuneData = [];
 
-    // 【關鍵優化 2】非同步下載 JSON，不卡圖片
-    async function fetchData() {
+    // 初始化：抓資料 + 設定自動跳轉
+    async function initApp() {
         try {
             const res = await fetch('data.json');
             fortuneData = await res.json();
         } catch (e) { console.error("Data error"); }
+
+        // 預先偷偷下載 Page 3 的 GIF
+        const preloadImg = new Image();
+        preloadImg.src = IMG_URLS.page3;
+
+        // 2.5秒後自動跳轉到中籤頁 (配合過場動畫時間)
+        setTimeout(showResultPage, 2500);
     }
 
-    function handleStartClick() {
-        const p1 = document.getElementById('page1');
-        p1.style.opacity = '0';
-        setTimeout(() => {
-            p1.style.display = 'none';
-            goToPage2();
-        }, 150);
-    }
-
-    function goToPage2() {
-        const p2 = document.getElementById('page2');
-        p2.style.display = 'flex';
-        // 【關鍵優化 3】只有在點擊後，才開始下載 Page 2 的圖
-        document.getElementById('gif2').src = IMG_URLS.page2;
-        
-        // 同時偷偷下載 Page 3 的圖，利用這 2 秒過場時間
-        const tempImg = new Image();
-        tempImg.src = IMG_URLS.page3;
-
-        setTimeout(loadToPage3, 2000); 
-    }
-
-    async function loadToPage3() {
+    function showResultPage() {
         document.getElementById('page2').style.display = 'none';
+        
+        const page3 = document.getElementById('page3');
         const gif3 = document.getElementById('gif3');
+        
+        // 設定並顯示中籤動畫
         gif3.src = IMG_URLS.page3;
-        document.getElementById('page3').style.display = 'flex';
+        page3.style.display = 'flex';
         document.getElementById('page3-content-wrapper').style.opacity = '0';
 
-        if (fortuneData.length === 0) await fetchData();
-        const random = fortuneData[Math.floor(Math.random() * fortuneData.length)];
-        document.getElementById('content-B').textContent = random.contentB; 
-        document.getElementById('content-C').textContent = random.contentC; 
-        
+        // 抽取籤詩
+        if (fortuneData.length > 0) {
+            const random = fortuneData[Math.floor(Math.random() * fortuneData.length)];
+            document.getElementById('content-B').textContent = random.contentB; 
+            document.getElementById('content-C').textContent = random.contentC; 
+        }
+
+        // 文字浮現 (0.8秒後)
         setTimeout(() => { 
             document.getElementById('page3-content-wrapper').style.opacity = '1'; 
         }, 800);
         
-        // 3秒後定格成靜態圖 (靜態圖很小，通常已經載好了)
+        // 動畫定格 (3秒後換成靜態圖)
         setTimeout(() => { gif3.src = IMG_URLS.static; }, 3000); 
     }
 
-    function resetPage() {
-        document.getElementById('page3-content-wrapper').style.opacity = '0';
-        document.getElementById('page3').style.display = 'none';
-        handleStartClick();
+    // 重置功能：重新載入網頁，從過場動畫開始
+    function resetApp() {
+        // 簡單暴力：直接重整頁面，確保動畫從頭播放
+        window.location.reload();
     }
 
-    // 頁面載入後只做 JSON 抓取
-    window.onload = fetchData;
+    // 網頁載入後立即執行
+    window.addEventListener('load', initApp);
 </script>
 </body>
 </html>
